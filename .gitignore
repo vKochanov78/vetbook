@@ -1,0 +1,27 @@
+# --- Maven ---
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# --- Базата данни (всеки си я има своя локално) ---
+*.db
+*.db-journal
+data/
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iml
+out/
+
+# --- Eclipse / VS Code ---
+.classpath
+.project
+.settings/
+.vscode/
+
+# --- Локални настройки, които не се споделят ---
+/vetbook.properties
+
+# --- Windows / macOS боклук ---
+Thumbs.db
+desktop.ini
+.DS_Store

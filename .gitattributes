@@ -1,0 +1,12 @@
+# Нормализира края на редовете, за да не се "променя" целият файл при
+# всяко качване от различен компютър.
+* text=auto
+
+# Bash скриптът на Maven wrapper задължително остава с LF,
+# иначе не тръгва на Linux/macOS.
+mvnw text eol=lf
+*.sh text eol=lf
+
+# Windows скриптовете остават с CRLF.
+mvnw.cmd text eol=crlf
+*.bat text eol=crlf
