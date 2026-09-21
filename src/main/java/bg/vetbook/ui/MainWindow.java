@@ -3,140 +3,108 @@ package bg.vetbook.ui;
 import bg.vetbook.config.AppConfig;
 import bg.vetbook.dao.Database;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JToggleButton;
-import javax.swing.SwingConstants;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import javax.swing.*;
+import java.awt.*;
 
-/**
- * Главният прозорец: навигация отляво, екранът отдясно, лента със състоянието долу.
- * <p>
- * Екраните са наредени в {@link CardLayout} — всички са създадени наведнъж, но
- * се вижда само един. Смяната става с бутоните отляво.
- */
+// Главният прозорец. Отляво са бутоните, отдясно се сменят екраните.
 public class MainWindow extends JFrame {
 
-    private final CardLayout cards = new CardLayout();
-    private final JPanel content = new JPanel(cards);
-    private final Map<String, ScreenPanel> screens = new LinkedHashMap<>();
-    private final Map<String, JToggleButton> navigationButtons = new LinkedHashMap<>();
+    // CardLayout държи всички екрани един върху друг и показва само един.
+    private CardLayout cards = new CardLayout();
+    private JPanel content = new JPanel(cards);
+    private ScreenPanel[] screens;
 
     public MainWindow(AppConfig config, Database database) {
-        super(config.windowTitle());
-
-        List<ScreenPanel> panels = List.of(
+        screens = new ScreenPanel[] {
                 new VisitsPanel(config, database),
                 new VisitCardPanel(config, database),
                 new CatalogPanel(config, database),
                 new ReportPanel(config, database)
-        );
+        };
 
-        for (ScreenPanel panel : panels) {
-            screens.put(panel.title(), panel);
-            content.add(panel, panel.title());
+        for (int i = 0; i < screens.length; i++) {
+            content.add(screens[i], screens[i].getTitle());
         }
 
+        setTitle(config.getWindowTitle());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-        add(buildNavigation(), BorderLayout.WEST);
-        add(content, BorderLayout.CENTER);
-        add(buildStatusBar(config, database), BorderLayout.SOUTH);
 
-        setSize(config.windowWidth(), config.windowHeight());
+        add(createMenu(), BorderLayout.WEST);
+        add(content, BorderLayout.CENTER);
+        add(createStatusBar(config, database), BorderLayout.SOUTH);
+
+        setSize(config.getWindowWidth(), config.getWindowHeight());
         setMinimumSize(new Dimension(900, 600));
         setLocationRelativeTo(null);
 
-        showScreen(panels.get(0).title());
+        showScreen(screens[0].getTitle());
     }
 
-    /**
-     * Показва екрана с даденото име и натиска съответния бутон в навигацията.
-     * Ползва се и отвън — например когато от списъка с прегледи се отваря
-     * картата на конкретен преглед.
-     */
+    // Показва екрана с даденото име. Вика се и от бутоните, и отвън.
     public void showScreen(String title) {
-        ScreenPanel panel = screens.get(title);
-        if (panel == null) {
-            throw new IllegalArgumentException("Няма екран с име „" + title + "“.");
-        }
         cards.show(content, title);
-        navigationButtons.get(title).setSelected(true);
-        panel.onShown();
+
+        for (int i = 0; i < screens.length; i++) {
+            if (screens[i].getTitle().equals(title)) {
+                screens[i].onShown();
+            }
+        }
     }
 
-    /** Връща екран по име, за да могат екраните да си говорят помежду си. */
-    public ScreenPanel screen(String title) {
-        return screens.get(title);
+    // Дава достъп до конкретен екран, за да могат екраните да си говорят.
+    public ScreenPanel getScreen(String title) {
+        for (int i = 0; i < screens.length; i++) {
+            if (screens[i].getTitle().equals(title)) {
+                return screens[i];
+            }
+        }
+        return null;
     }
 
-    private JPanel buildNavigation() {
-        JPanel navigation = new JPanel();
-        navigation.setLayout(new BoxLayout(navigation, BoxLayout.Y_AXIS));
-        navigation.setBorder(BorderFactory.createEmptyBorder(20, 16, 20, 16));
-        navigation.setPreferredSize(new Dimension(220, 0));
+    // Лентата с бутоните отляво.
+    private JPanel createMenu() {
+        JPanel menu = new JPanel();
+        menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
+        menu.setBorder(BorderFactory.createEmptyBorder(20, 16, 20, 16));
+        menu.setPreferredSize(new Dimension(220, 0));
 
         JLabel logo = new JLabel("VetBook");
-        logo.setFont(logo.getFont().deriveFont(Font.BOLD, 20f));
+        logo.setFont(new Font("SansSerif", Font.BOLD, 20));
         logo.setAlignmentX(Component.LEFT_ALIGNMENT);
-        navigation.add(logo);
+        menu.add(logo);
 
         JLabel subtitle = new JLabel("ветеринарна амбулатория");
-        subtitle.setFont(subtitle.getFont().deriveFont(Font.PLAIN, 11f));
-        subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         subtitle.setBorder(BorderFactory.createEmptyBorder(2, 0, 24, 0));
-        navigation.add(subtitle);
+        subtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        menu.add(subtitle);
 
-        ButtonGroup group = new ButtonGroup();
-        for (ScreenPanel panel : screens.values()) {
-            JToggleButton button = new JToggleButton(panel.title());
+        for (int i = 0; i < screens.length; i++) {
+            String title = screens[i].getTitle();
+
+            JButton button = new JButton(title);
             button.setHorizontalAlignment(SwingConstants.LEFT);
-            button.setFocusPainted(false);
             button.setAlignmentX(Component.LEFT_ALIGNMENT);
-            button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
-            button.addActionListener(event -> showScreen(panel.title()));
+            button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+            button.addActionListener(e -> showScreen(title));
 
-            group.add(button);
-            navigationButtons.put(panel.title(), button);
-            navigation.add(button);
-            navigation.add(Box.createVerticalStrut(8));
+            menu.add(button);
+            menu.add(Box.createVerticalStrut(8));
         }
 
-        navigation.add(Box.createVerticalGlue());
-        return navigation;
+        return menu;
     }
 
-    private JPanel buildStatusBar(AppConfig config, Database database) {
+    // Тънката лента долу: къде е базата и откъде са настройките.
+    private JPanel createStatusBar(AppConfig config, Database database) {
         JPanel bar = new JPanel(new BorderLayout());
-        bar.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 0, 0, bar.getBackground().darker()),
-                BorderFactory.createEmptyBorder(6, 12, 6, 12)));
+        bar.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
 
-        JLabel left = new JLabel("База: " + database.file());
-        JLabel right = new JLabel(config.sourceDescription());
-        left.setFont(left.getFont().deriveFont(Font.PLAIN, 11f));
-        right.setFont(right.getFont().deriveFont(Font.PLAIN, 11f));
+        JLabel left = new JLabel("База: " + database.getPath());
+        JLabel right = new JLabel(config.getSource());
 
         bar.add(left, BorderLayout.WEST);
         bar.add(right, BorderLayout.EAST);
         return bar;
-    }
-
-    /** Имената на екраните в реда, в който стоят в навигацията. */
-    public List<String> screenTitles() {
-        return new ArrayList<>(screens.keySet());
     }
 }

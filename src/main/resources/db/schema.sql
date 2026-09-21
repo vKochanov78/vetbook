@@ -1,7 +1,6 @@
 -- ============================================================
---  VetBook — структура на базата
---  Имената на таблиците и колоните са наш избор (заданието го позволява).
---  Правило: таблици в множествено число, колони с малки букви и долна черта.
+--  VetBook - структура на базата
+--  Таблиците са в множествено число, колоните с малки букви и долна черта.
 -- ============================================================
 
 PRAGMA foreign_keys = ON;
@@ -16,8 +15,8 @@ CREATE TABLE IF NOT EXISTS owners (
 );
 
 -- ---------- Животни ----------
--- gold_card_until = докога важи „златният картон“ (абонамент).
--- NULL означава, че животното няма абонамент.
+-- gold_card_until е датата, докато важи златният картон.
+-- Празно означава, че животното няма такъв.
 CREATE TABLE IF NOT EXISTS animals (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     owner_id        INTEGER NOT NULL REFERENCES owners (id),
@@ -37,11 +36,10 @@ CREATE TABLE IF NOT EXISTS doctors (
 );
 
 -- ---------- Прегледи ----------
--- visit_at се пази като текст 'YYYY-MM-DD HH:MM' — така сортирането по
--- азбучен ред съвпада със сортирането по време.
--- consultation_fee се записва в самия преглед, а не се смята наум при всяко
--- отваряне: ако утре таксата стане 18 €, старите прегледи трябва да си останат
--- с тази, която реално е била начислена.
+-- visit_at се пази като текст във вида 'YYYY-MM-DD HH:MM'.
+-- Така подреждането по азбучен ред съвпада с подреждането по време.
+-- Таксата се записва в самия преглед. Ако утре я променим, старите
+-- прегледи трябва да си останат със сумата, която реално е била взета.
 CREATE TABLE IF NOT EXISTS visits (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
     animal_id        INTEGER NOT NULL REFERENCES animals (id),
@@ -56,8 +54,7 @@ CREATE TABLE IF NOT EXISTS visits (
 );
 
 -- ---------- Процедури и медикаменти по преглед ----------
--- ON DELETE CASCADE: изтрие ли се преглед, редовете му си отиват с него.
--- Това НЕ противоречи на забраната за триене — тя е за собственици и животни.
+-- ON DELETE CASCADE значи: изтрие ли се преглед, редовете му си отиват с него.
 CREATE TABLE IF NOT EXISTS visit_items (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     visit_id    INTEGER NOT NULL REFERENCES visits (id) ON DELETE CASCADE,
@@ -71,7 +68,7 @@ CREATE TABLE IF NOT EXISTS visit_items (
 );
 
 -- ---------- Индекси ----------
--- Колоните, по които се филтрира и търси най-често.
+-- Колоните, по които се търси и филтрира най-често.
 CREATE INDEX IF NOT EXISTS ix_visits_visit_at   ON visits (visit_at);
 CREATE INDEX IF NOT EXISTS ix_visits_status     ON visits (status);
 CREATE INDEX IF NOT EXISTS ix_visits_doctor_day ON visits (doctor_id, visit_at);

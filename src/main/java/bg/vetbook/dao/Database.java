@@ -2,155 +2,115 @@ package bg.vetbook.dao;
 
 import bg.vetbook.config.AppConfig;
 
-import java.io.IOException;
+import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
-/**
- * Единствената точка, през която приложението стига до SQLite файла.
- * <p>
- * Всички DAO класове искат връзка оттук — така пътят до базата и настройките
- * на връзката са на едно място, а не разпръснати из целия проект.
- */
-public final class Database {
+// Всичко около файла на базата: отваряне на връзка, създаване на таблиците
+// и зареждане на примерните данни при първо пускане.
+public class Database {
 
-    private final Path file;
+    private String path;
 
     public Database(AppConfig config) {
-        this.file = config.databasePath().toAbsolutePath();
+        File file = new File(config.getDatabasePath());
+        this.path = file.getAbsolutePath();
     }
 
-    /** Пътят до файла на базата — показва се в лентата долу в главния прозорец. */
-    public Path file() {
-        return file;
+    public String getPath() {
+        return path;
     }
 
-    /**
-     * Отваря нова връзка към базата.
-     * <p>
-     * Викащият я затваря — навсякъде в проекта се ползва
-     * {@code try (Connection c = database.open()) { ... }}.
-     */
-    public Connection open() {
+    // Отваря нова връзка към базата. Който я отвори, той я затваря.
+    public Connection connect() throws SQLException {
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + path);
+
+        // Без този ред SQLite не проверява външните ключове и изтриването
+        // на собственик, който има прегледи, би минало.
+        Statement statement = connection.createStatement();
+        statement.execute("PRAGMA foreign_keys = ON");
+        statement.close();
+
+        return connection;
+    }
+
+    // Подготвя базата: създава таблиците, ако ги няма, и слага
+    // примерните данни, ако базата е още празна.
+    public void setup() throws SQLException {
+        createFolder();
+
+        Connection connection = connect();
         try {
-            Connection connection = DriverManager.getConnection("jdbc:sqlite:" + file);
-            try (Statement statement = connection.createStatement()) {
-                // Без този ред SQLite мълчаливо пренебрегва външните ключове,
-                // тоест забраната за триене на собственик с прегледи няма да работи.
-                statement.execute("PRAGMA foreign_keys = ON");
-            }
-            return connection;
-        } catch (SQLException e) {
-            throw new DataAccessException("Връзката с базата не можа да се отвори.", e);
-        }
-    }
-
-    /**
-     * Подготвя базата за работа: създава файла и таблиците, ако ги няма, и
-     * зарежда примерните данни, ако базата е още празна.
-     * <p>
-     * Заданието иска приложението да тръгва веднага с данни за демонстрация.
-     */
-    public void initialise() {
-        createParentFolder();
-
-        try (Connection connection = open()) {
             runScript(connection, "/db/schema.sql");
             if (isEmpty(connection)) {
                 runScript(connection, "/db/seed.sql");
             }
-        } catch (SQLException e) {
-            throw new DataAccessException("Базата не можа да се подготви за работа.", e);
+        } finally {
+            connection.close();
         }
     }
 
-    private void createParentFolder() {
-        Path folder = file.getParent();
-        if (folder == null || Files.isDirectory(folder)) {
-            return;
-        }
-        try {
-            Files.createDirectories(folder);
-        } catch (IOException e) {
-            throw new DataAccessException("Папката " + folder + " не можа да се създаде.", e);
+    // Създава папката, в която ще стои файлът на базата.
+    private void createFolder() {
+        File folder = new File(path).getParentFile();
+        if (folder != null && !folder.exists()) {
+            folder.mkdirs();
         }
     }
 
-    /** Базата е празна, ако още няма нито един собственик. */
+    // Базата е празна, ако няма нито един собственик.
     private boolean isEmpty(Connection connection) throws SQLException {
-        try (Statement statement = connection.createStatement();
-             ResultSet rows = statement.executeQuery("SELECT COUNT(*) FROM owners")) {
-            return rows.next() && rows.getInt(1) == 0;
-        }
+        Statement statement = connection.createStatement();
+        ResultSet rows = statement.executeQuery("SELECT COUNT(*) FROM owners");
+        rows.next();
+        int count = rows.getInt(1);
+        rows.close();
+        statement.close();
+        return count == 0;
     }
 
-    /**
-     * Изпълнява .sql файл от ресурсите на проекта, ред по ред.
-     * <p>
-     * Заявките се разделят по знака „;“. Това работи, защото в нашите скриптове
-     * няма точка и запетая вътре в текстова стойност — ако някой добави такава,
-     * трябва да се мине към истински парсер.
-     */
-    private void runScript(Connection connection, String resource) throws SQLException {
-        String script = readResource(resource);
-        List<String> statements = splitStatements(script);
+    // Изпълнява .sql файл, който е сложен в ресурсите на проекта.
+    private void runScript(Connection connection, String fileName) throws SQLException {
+        String script = removeComments(readFile(fileName));
+        String[] commands = script.split(";");
 
-        boolean previousAutoCommit = connection.getAutoCommit();
-        connection.setAutoCommit(false);
-        try (Statement statement = connection.createStatement()) {
-            for (String sql : statements) {
+        Statement statement = connection.createStatement();
+        for (int i = 0; i < commands.length; i++) {
+            String sql = commands[i].trim();
+            if (!sql.isEmpty()) {
                 statement.execute(sql);
             }
-            connection.commit();
-        } catch (SQLException e) {
-            connection.rollback();
-            throw new DataAccessException("Скриптът " + resource + " не можа да се изпълни.", e);
-        } finally {
-            connection.setAutoCommit(previousAutoCommit);
+        }
+        statement.close();
+    }
+
+    private String readFile(String fileName) {
+        try {
+            InputStream in = Database.class.getResourceAsStream(fileName);
+            byte[] bytes = in.readAllBytes();
+            in.close();
+            return new String(bytes, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException("Файлът " + fileName + " не можа да се прочете.", e);
         }
     }
 
-    private String readResource(String resource) {
-        try (InputStream in = Database.class.getResourceAsStream(resource)) {
-            if (in == null) {
-                throw new DataAccessException("Липсва файлът " + resource + " в приложението.");
-            }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new DataAccessException("Файлът " + resource + " не можа да се прочете.", e);
-        }
-    }
+    // Маха редовете с коментари, за да останат само заявките.
+    private String removeComments(String script) {
+        StringBuilder result = new StringBuilder();
+        String[] lines = script.split("\n");
 
-    private List<String> splitStatements(String script) {
-        List<String> statements = new ArrayList<>();
-        StringBuilder current = new StringBuilder();
-
-        for (String line : script.split("\\R")) {
-            String trimmed = line.trim();
-            if (trimmed.isEmpty() || trimmed.startsWith("--")) {
-                continue;
-            }
-            current.append(line).append('\n');
-            if (trimmed.endsWith(";")) {
-                String sql = current.toString().trim();
-                statements.add(sql.substring(0, sql.length() - 1));
-                current.setLength(0);
+        for (int i = 0; i < lines.length; i++) {
+            if (!lines[i].trim().startsWith("--")) {
+                result.append(lines[i]);
+                result.append("\n");
             }
         }
-
-        String leftover = current.toString().trim();
-        if (!leftover.isEmpty()) {
-            statements.add(leftover);
-        }
-        return statements;
+        return result.toString();
     }
 }

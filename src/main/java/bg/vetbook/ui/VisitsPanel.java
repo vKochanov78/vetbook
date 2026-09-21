@@ -3,35 +3,32 @@ package bg.vetbook.ui;
 import bg.vetbook.config.AppConfig;
 import bg.vetbook.dao.Database;
 
-import java.awt.BorderLayout;
+import java.awt.*;
 
-/**
- * Екран „Прегледи“ — т. 4.1 от заданието.
- * Отговорник: Васил.
- */
+// Екран „Прегледи“ - списъкът с всички прегледи.
+// Прави го Васил.
 public class VisitsPanel extends ScreenPanel {
 
-    private final AppConfig config;
-    private final Database database;
+    private AppConfig config;
+    private Database database;
 
     public VisitsPanel(AppConfig config, Database database) {
         this.config = config;
         this.database = database;
 
-        setLayout(new BorderLayout());
-        add(Placeholder.build(
-                "Прегледи",
-                "Васил",
-                "Таблица с всички прегледи: дата и час, животно, собственик, лекар, статус, сума",
+        String[] tasks = {
+                "Таблица с прегледите: дата и час, животно, собственик, лекар, статус, сума",
                 "Филтър по дата и по статус",
                 "Търсене по име на животно или на собственик",
-                "Бутон за нов преглед — отваря екран „Карта на преглед“",
-                "Двойно щракване върху ред — отваря съществуващия преглед"
-        ), BorderLayout.CENTER);
+                "Бутон за нов преглед - отваря екран „Карта на преглед“",
+                "Двойно щракване върху ред - отваря съществуващия преглед"
+        };
+
+        setLayout(new BorderLayout());
+        add(Placeholder.create("Прегледи", "Васил", tasks), BorderLayout.CENTER);
     }
 
-    @Override
-    public String title() {
+    public String getTitle() {
         return "Прегледи";
     }
 }
