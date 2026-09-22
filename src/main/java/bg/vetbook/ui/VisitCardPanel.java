@@ -12,7 +12,11 @@ public class VisitCardPanel extends ScreenPanel {
     private AppConfig config;
     private Database database;
 
+    // ID на прегледа, който е избран от таблицата
+    private int visitId = -1;
+
     public VisitCardPanel(AppConfig config, Database database) {
+
         this.config = config;
         this.database = database;
 
@@ -26,10 +30,36 @@ public class VisitCardPanel extends ScreenPanel {
         };
 
         setLayout(new BorderLayout());
-        add(Placeholder.create("Карта на преглед", "Валентин", tasks), BorderLayout.CENTER);
+
+        add(
+                Placeholder.create(
+                        "Карта на преглед",
+                        "Валентин",
+                        tasks
+                ),
+                BorderLayout.CENTER
+        );
     }
 
+    // Получава ID на прегледа, който трябва да бъде отворен
+    public void setVisitId(int visitId) {
+
+        this.visitId = visitId;
+
+        System.out.println(
+                "Отворен преглед с ID: " + visitId
+        );
+    }
+
+    // Връща ID на текущия преглед
+    public int getVisitId() {
+
+        return visitId;
+    }
+
+    @Override
     public String getTitle() {
+
         return "Карта на преглед";
     }
 }
