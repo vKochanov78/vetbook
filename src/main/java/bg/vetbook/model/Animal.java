@@ -2,16 +2,16 @@ package bg.vetbook.model;
 
 public class Animal {
     private int id;
-    private String ime;
-    private String vid;
-    private int ownerId;
-    private String OwnerIme;
+    private String name;
+    private String species;
+    private int owner_id;
+    private String ownerName;
 
-    public Animal(int id,String ime, String vid, int ownerId){
+    public Animal(int id, String name, String species, int owner_id){
         this.id= id;
-        this.ime= ime;
-        this.vid = vid;
-        this.ownerId= ownerId;
+        this.name = name;
+        this.species = species;
+        this.owner_id = owner_id;
     }
 
     public int getId() {
@@ -22,34 +22,34 @@ public class Animal {
         this.id = id;
     }
 
-    public int getOwnerId(){
-        return ownerId;
+    public int getOwner_id(){
+        return owner_id;
     }
-    public void setOwnerId(int ownerId){
-        this.ownerId= ownerId;
-    }
-
-    public String getOwnerIme() {
-        return OwnerIme;
+    public void setOwner_id(int owner_id){
+        this.owner_id = owner_id;
     }
 
-    public void setOwnerIme(String OwnerIme) {
-        this.OwnerIme = OwnerIme;
+    public String getOwnerName() {
+        return ownerName;
     }
 
-    public void setIme(String ime) {
-        this.ime = ime;
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
     }
 
-    public String getIme() {
-        return ime;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getVid() {
-        return vid;
+    public String getName() {
+        return name;
     }
 
-    public void setVid(String vid) {
-        this.vid = vid;
+    public String getSpecies() {
+        return species;
+    }
+
+    public void setSpecies(String species) {
+        this.species = species;
     }
 }

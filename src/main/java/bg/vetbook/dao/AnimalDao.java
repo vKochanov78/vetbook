@@ -11,29 +11,27 @@ public class AnimalDao {
     public AnimalDao(Database database){
         this.database = database;
     }
-    public List<Animal> getAllAnimals() {
+    public List<Animal> getAllAnimals() throws SQLException {
         List<Animal> animals = new ArrayList<>();
         String sql = """
                       SELECT a.id, a.name, a.species, a.owner_id, o.full_name AS owner_name
                       FROM animals a
                       LEFT JOIN owners o ON a.owner_id = o.id;
                      """;
-        try (Connection conn = database.connect();
+         try (Connection conn = database.connect();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-             Animal animal = new Animal(
-                     rs.getInt("id"),
-                     rs.getString("name"),
-                     rs.getString("species"),
-                     rs.getInt("owner_id")
-             );
-            animal.setOwnerIme(rs.getString("owner_name"));
-            animals.add(animal);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+             while (rs.next()) {
+                 Animal animal = new Animal(
+                         rs.getInt("id"),
+                         rs.getString("name"),
+                         rs.getString("species"),
+                         rs.getInt("owner_id")
+                 );
+                 animal.setOwnerName(rs.getString("owner_name"));
+                 animals.add(animal);
+             }
+         }
         return animals;
     }
 }
