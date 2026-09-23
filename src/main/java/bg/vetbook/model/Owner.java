@@ -2,14 +2,14 @@ package bg.vetbook.model;
 //Класът представляващ собственик на животно
 public class Owner {
     private int id;
-    private String ime;
-    private String telefon;
+    private String name;
+    private String phone;
     private String email;
     //Конструктор взимайки всички полета
-    public Owner(int id,String ime, String telefon, String email){
+    public Owner(int id, String name, String phone, String email){
         this.id = id;
-        this.ime = ime;
-        this.telefon = telefon;
+        this.name = name;
+        this.phone = phone;
         this.email = email;
     }
 
@@ -20,18 +20,18 @@ public class Owner {
         this.id = id;
     }
 
-    public String getIme(){
-        return ime;
+    public String getName(){
+        return name;
     }
-    public void setIme(String ime){
-        this.ime = ime;
+    public void setName(String name){
+        this.name = name;
     }
 
-    public String getTelefon(){
-        return telefon;
+    public String getPhone(){
+        return phone;
     }
-    public void setTelefon(String telefon){
-        this.telefon = telefon;
+    public void setPhone(String phone){
+        this.phone = phone;
     }
 
     public String getEmail(){
@@ -42,6 +42,6 @@ public class Owner {
     }
 
     public String toString(){
-        return ime; // Помага за визуализация в списъка
+        return name; // Помага за визуализация в списъка
     }
 }

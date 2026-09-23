@@ -1,5 +1,4 @@
 package bg.vetbook.ui;
-
 import bg.vetbook.config.AppConfig;
 import bg.vetbook.dao.AnimalDao;
 import bg.vetbook.dao.Database;
@@ -11,6 +10,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -65,20 +65,23 @@ public class CatalogPanel extends ScreenPanel {
      * Изтегля данните от базата данни чрез DAO класовете и ги налива в таблиците.
      */
     public void loadData() {
-        // Изчистваме старите редове преди да заредим новите (предотвратява дублиране)
-        ownerModel.setRowCount(0);
-        animalModel.setRowCount(0);
-
-        // Зареждане на собственици
-        List<Owner> owners = ownerDao.getAllOwners();
-        for (Owner o : owners) {
-            ownerModel.addRow(new Object[]{o.getId(), o.getIme(), o.getTelefon()});
-        }
-
-        // Зареждане на животни
-        List<Animal> animals = animalDao.getAllAnimals();
-        for (Animal a : animals) {
-            animalModel.addRow(new Object[]{a.getId(), a.getIme(), a.getVid(), a.getOwnerIme()});
+        try {
+            // Изчистваме старите редове преди да заредим новите (предотвратява дублиране)
+            ownerModel.setRowCount(0);
+            animalModel.setRowCount(0);
+            // Зареждане на собственици
+            List<Owner> owners = ownerDao.getAllOwners();
+            for (Owner o : owners) {
+                ownerModel.addRow(new Object[]{o.getId(), o.getName(), o.getPhone()});
+            }
+            // Зареждане на животни
+            List<Animal> animals = animalDao.getAllAnimals();
+            for (Animal a : animals) {
+                animalModel.addRow(new Object[]{a.getId(), a.getName(), a.getSpecies(), a.getOwnerName()});
+            }
+            }
+            catch(SQLException e){
+            Dialogs.error(this, "Данните не можаха да се заредят.", e);
         }
     }
 
