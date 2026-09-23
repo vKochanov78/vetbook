@@ -113,7 +113,7 @@ public class CatalogPanel extends ScreenPanel {
         JButton btnEdit = createStyledButton("Редактирай");
         JButton btnDelete = createStyledButton("Изтрий");
 
-        // Временно поведение (Placeholder) за Ден 2 - изписват действие в конзолата
+        // Action Listeners (Placeholders)
         btnAdd.addActionListener(e -> System.out.println("Action: Добавяне в " + title));
         btnEdit.addActionListener(e -> System.out.println("Action: Редактиране в " + title));
         btnDelete.addActionListener(e -> System.out.println("Action: Изтриване от " + title));
