@@ -79,8 +79,6 @@ public class OwnerDialog extends JDialog {
                     nameField.getText().trim(),
                     phoneField.getText().trim(),
                     emailField.getText().trim()
-
-
         );
         }
     }

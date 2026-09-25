@@ -1,9 +1,7 @@
 package bg.vetbook.dao;
 import bg.vetbook.model.Owner;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 public class OwnerDao {
@@ -29,5 +27,17 @@ public class OwnerDao {
 
         }
         return owners;
+    }
+    public void addOwners(Owner owner)throws SQLException{
+        String sql = "INSERT INTO owners(full_name,phone,email)VALUES(?,?,?)";
+        try (Connection conn = database.connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql))
+        {
+         pstmt.setString(1,owner.getName());
+         pstmt.setString(2,owner.getPhone());
+         pstmt.setString(3,owner.getEmail());
+
+         pstmt.executeUpdate();
+        }
     }
  }

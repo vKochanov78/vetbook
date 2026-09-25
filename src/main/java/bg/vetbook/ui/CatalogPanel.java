@@ -115,7 +115,13 @@ public class CatalogPanel extends ScreenPanel {
         JButton btnDelete = createStyledButton("Изтрий");
 
         // Action Listeners (Placeholders)
-        btnAdd.addActionListener(e -> System.out.println("Action: Добавяне в " + title));
+        btnAdd.addActionListener(e -> {
+            if (title.equals("Собственици")) {
+                openAddOwnerDialog();
+            } else {
+                System.out.println("Добяване на животно - предстои");
+            }
+        });
         btnEdit.addActionListener(e -> System.out.println("Action: Редактиране в " + title));
         btnDelete.addActionListener(e -> System.out.println("Action: Изтриване от " + title));
 
@@ -137,5 +143,21 @@ public class CatalogPanel extends ScreenPanel {
     }
     public String getTitle(){
         return "Картотека";
+    }
+    private void openAddOwnerDialog(){
+        Window parentWindow =SwingUtilities.getWindowAncestor(this);
+        OwnerDialog dialog = new OwnerDialog(parentWindow,null);
+        dialog.setVisible(true);
+
+        if(dialog.isSaved())
+        {
+         try {
+             Owner newOwner= dialog.getOwnerData();
+             ownerDao.addOwners(newOwner);
+             loadData();
+         } catch (SQLException ex ){
+             Dialogs.error(this,"Грешка при запазването на собственик",ex);
+         }
+        }
     }
 }
