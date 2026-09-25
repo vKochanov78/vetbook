@@ -35,8 +35,6 @@ public class CatalogPanel extends ScreenPanel {
         // Настройка на основния изглед на панела
         setLayout(new BorderLayout(15, 15));
         setBorder(new EmptyBorder(20, 20, 20, 20));
-        setBackground(new Color(245, 247, 246));
-
         // 1. Заглавна част
         JLabel titleLabel = new JLabel("Картотека", JLabel.LEFT);
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 26));

@@ -4,14 +4,14 @@ public class Animal {
     private int id;
     private String name;
     private String species;
-    private int owner_id;
+    private int ownerId;
     private String ownerName;
 
-    public Animal(int id, String name, String species, int owner_id){
+    public Animal(int id, String name, String species, int ownerId){
         this.id= id;
         this.name = name;
         this.species = species;
-        this.owner_id = owner_id;
+        this.ownerId = ownerId;
     }
 
     public int getId() {
@@ -22,11 +22,11 @@ public class Animal {
         this.id = id;
     }
 
-    public int getOwner_id(){
-        return owner_id;
+    public int getOwnerId(){
+        return ownerId;
     }
-    public void setOwner_id(int owner_id){
-        this.owner_id = owner_id;
+    public void setOwnerId(int ownerId){
+        this.ownerId = ownerId;
     }
 
     public String getOwnerName() {
