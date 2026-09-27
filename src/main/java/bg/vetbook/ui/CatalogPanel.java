@@ -117,22 +117,22 @@ public class CatalogPanel extends ScreenPanel {
         // Action Listeners (Placeholders)
         btnAdd.addActionListener(e -> {
             if (title.equals("Собственици")) {
-                openAddOwnerDialog();
+                addOwnerDialog();
             } else {
-                System.out.println("Добяване на животно - предстои");
+                addAnimalDialog();
             }
         });
         btnEdit.addActionListener(e ->{if(title.equals("Собственици")){
-            openEditOwnerDialog(table);
+            editOwnerDialog(table);
 
          }else{
-            System.out.println("Редактиране на животно - предстои");
+            editAnimalDialog(table);
         }
         } );
         btnDelete.addActionListener(e -> {if(title.equals("Собственици")){
             deleteSelectedOwner(table);
         }else{
-            System.out.println("Изтриване на животно - предстои");
+            deleteSelectedAnimal(table);
         }
         });
 
@@ -155,7 +155,7 @@ public class CatalogPanel extends ScreenPanel {
     public String getTitle(){
         return "Картотека";
     }
-    private void openAddOwnerDialog(){
+    private void addOwnerDialog(){
         Window parentWindow =SwingUtilities.getWindowAncestor(this);
         OwnerDialog dialog = new OwnerDialog(parentWindow,null);
         dialog.setVisible(true);
@@ -171,7 +171,7 @@ public class CatalogPanel extends ScreenPanel {
          }
         }
     }
-    private void openEditOwnerDialog(JTable table){
+    private void editOwnerDialog(JTable table){
         int selectedRow = table.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, "Моля, изберете собственик от таблицата!", "Внимание", JOptionPane.WARNING_MESSAGE);
@@ -223,6 +223,72 @@ public class CatalogPanel extends ScreenPanel {
                 loadData();
             } catch (SQLException ex) {
                 Dialogs.error(this, "Грешка при изтриване на собственик.", ex);
+            }
+        }
+    }
+    private void addAnimalDialog(){
+        try {
+            List<Owner> availableOwners = ownerDao.getAllOwners(); // Трябват ни за падащото меню
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+
+            AnimalDialog dialog = new AnimalDialog(parentWindow, null, availableOwners);
+            dialog.setVisible(true);
+
+            if (dialog.isSaved()) {
+                animalDao.addAnimal(dialog.getAnimalData());
+                loadData();
+            }
+        } catch (SQLException ex) {
+            Dialogs.error(this, "Грешка при отваряне или запис на животно.", ex);
+        }
+    }
+    private void editAnimalDialog(JTable table){
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Моля, изберете животно!", "Внимание", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int id = (int) table.getValueAt(selectedRow, 0);
+        try {
+            List<Owner> availableOwners = ownerDao.getAllOwners();
+            // Намираме пълните данни за избраното животно от базата (заради ownerId)
+            Animal animalToEdit = null;
+            for (Animal a : animalDao.getAllAnimals()) {
+                if (a.getId() == id) {
+                    animalToEdit = a;
+                    break;
+                }
+            }
+            Window parentWindow = SwingUtilities.getWindowAncestor(this);
+            AnimalDialog dialog = new AnimalDialog(parentWindow, animalToEdit, availableOwners);
+            dialog.setVisible(true);
+            if (dialog.isSaved()) {
+                animalDao.updateAnimal(dialog.getAnimalData());
+                loadData();
+            }
+        } catch (SQLException ex) {
+            Dialogs.error(this, "Грешка при редакция.", ex);
+        }
+    }
+    private void deleteSelectedAnimal(JTable table){
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Моля, изберете животно!", "Внимание", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int id = (int) table.getValueAt(selectedRow, 0);
+        String name = (String) table.getValueAt(selectedRow, 1);
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Изтриване на животно: " + name + "?",
+                "Потвърждение", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                animalDao.deleteAnimal(id);
+                loadData();
+            } catch (SQLException ex) {
+                Dialogs.error(this, "Грешка при изтриване.", ex);
             }
         }
     }
