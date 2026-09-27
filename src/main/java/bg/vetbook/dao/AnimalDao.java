@@ -34,4 +34,33 @@ public class AnimalDao {
          }
         return animals;
     }
+    public void addAnimal(Animal animal) throws SQLException {
+        String sql = "INSERT INTO animals (name, species, owner_id) VALUES (?, ?, ?)";
+        try (Connection conn = database.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, animal.getName());
+            pstmt.setString(2, animal.getSpecies());
+            pstmt.setInt(3, animal.getOwnerId());
+            pstmt.executeUpdate();
+    }
+  }
+  public void updateAnimal(Animal animal) throws SQLException {
+      String sql = "UPDATE animals SET name = ?, species = ?, owner_id = ? WHERE id = ?";
+      try (Connection conn = database.connect();
+           PreparedStatement pstmt = conn.prepareStatement(sql)) {
+          pstmt.setString(1, animal.getName());
+          pstmt.setString(2, animal.getSpecies());
+          pstmt.setInt(3, animal.getOwnerId());
+          pstmt.setInt(4, animal.getId());
+          pstmt.executeUpdate();
+      }
+  }
+    public void deleteAnimal(int id) throws SQLException {
+        String sql = "DELETE FROM animals WHERE id = ?";
+        try (Connection conn = database.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            pstmt.executeUpdate();
+        }
+    }
 }
