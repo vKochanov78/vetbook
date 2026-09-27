@@ -122,8 +122,19 @@ public class CatalogPanel extends ScreenPanel {
                 System.out.println("Добяване на животно - предстои");
             }
         });
-        btnEdit.addActionListener(e -> System.out.println("Action: Редактиране в " + title));
-        btnDelete.addActionListener(e -> System.out.println("Action: Изтриване от " + title));
+        btnEdit.addActionListener(e ->{if(title.equals("Собственици")){
+            openEditOwnerDialog(table);
+
+         }else{
+            System.out.println("Редактиране на животно - предстои");
+        }
+        } );
+        btnDelete.addActionListener(e -> {if(title.equals("Собственици")){
+            deleteSelectedOwner(table);
+        }else{
+            System.out.println("Изтриване на животно - предстои");
+        }
+        });
 
         buttonPanel.add(btnAdd);
         buttonPanel.add(btnEdit);
@@ -158,6 +169,61 @@ public class CatalogPanel extends ScreenPanel {
          } catch (SQLException ex ){
              Dialogs.error(this,"Грешка при запазването на собственик",ex);
          }
+        }
+    }
+    private void openEditOwnerDialog(JTable table){
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Моля, изберете собственик от таблицата!", "Внимание", JOptionPane.WARNING_MESSAGE);
+            return; // Спираме, ако няма избран ред
+        }
+
+        // Взимаме данните от избрания ред (Колона 0 е ID, Колона 1 е Име, Колона 2 е Телефон)
+        int id = (int) table.getValueAt(selectedRow, 0);
+        String name = (String) table.getValueAt(selectedRow, 1);
+        String phone = (String) table.getValueAt(selectedRow, 2);
+
+        // Създаваме обект със старите данни (имейлът го няма в таблицата, затова го оставяме празен засега)
+        Owner ownerToEdit = new Owner(id, name, phone, "");
+
+        Window parentWindow = SwingUtilities.getWindowAncestor(this);
+        OwnerDialog dialog = new OwnerDialog(parentWindow, ownerToEdit);
+        dialog.setVisible(true);
+
+        if (dialog.isSaved()) {
+            try {
+                Owner updatedOwner = dialog.getOwnerData();
+                ownerDao.updateOwner(updatedOwner);
+                loadData(); // Презареждаме таблицата
+            } catch (SQLException ex) {
+                Dialogs.error(this, "Грешка при редакция на собственик.", ex);
+            }
+        }
+    }
+    private void deleteSelectedOwner(JTable table){
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow == -1) {
+            JOptionPane.showMessageDialog(this, "Моля, изберете собственик за изтриване!", "Внимание", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int id = (int) table.getValueAt(selectedRow, 0);
+        String name = (String) table.getValueAt(selectedRow, 1);
+
+        // Питаме за потвърждение (добра практика преди изтриване)
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Сигурни ли сте, че искате да изтриете собственик: " + name + "?",
+                "Потвърждение за изтриване",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                ownerDao.deleteOwner(id);
+                loadData();
+            } catch (SQLException ex) {
+                Dialogs.error(this, "Грешка при изтриване на собственик.", ex);
+            }
         }
     }
 }
