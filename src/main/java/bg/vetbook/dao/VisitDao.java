@@ -5,11 +5,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class VisitDAO {
+public class VisitDao {
 
     private final Database database;
 
-    public VisitDAO(Database database) {
+    public VisitDao(Database database) {
         this.database = database;
     }
 

@@ -2,7 +2,7 @@ package bg.vetbook.ui;
 
 import bg.vetbook.config.AppConfig;
 import bg.vetbook.dao.Database;
-import bg.vetbook.dao.VisitDAO;
+import bg.vetbook.dao.VisitDao;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -13,7 +13,7 @@ import java.util.Locale;
 
 public class VisitsPanel extends ScreenPanel {
 
-    private final VisitDAO visitDAO;
+    private final VisitDao visitDao;
 
     private JTable table;
     private DefaultTableModel tableModel;
@@ -23,7 +23,7 @@ public class VisitsPanel extends ScreenPanel {
     private JComboBox<String> statusComboBox;
 
     public VisitsPanel(AppConfig config, Database database) {
-        this.visitDAO = new VisitDAO(database);
+        this.visitDao = new VisitDao(database);
 
         setLayout(new BorderLayout(10, 10));
 
@@ -257,7 +257,7 @@ public class VisitsPanel extends ScreenPanel {
         tableModel.setRowCount(0);
 
         try (ResultSet resultSet =
-                     visitDAO.getAllVisits()) {
+                     visitDao.getAllVisits()) {
 
             fillTable(
                     resultSet,
@@ -308,7 +308,7 @@ public class VisitsPanel extends ScreenPanel {
         tableModel.setRowCount(0);
 
         try (ResultSet resultSet =
-                     visitDAO.searchVisits(
+                     visitDao.searchVisits(
                              databaseStatus
                      )) {
 
