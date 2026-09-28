@@ -52,4 +52,10 @@ public class Animal {
     public void setSpecies(String species) {
         this.species = species;
     }
+
+    // Показва се, когато животното се сложи в падащо меню.
+    @Override
+    public String toString() {
+        return name + " (" + species + ") - " + ownerName;
+    }
 }
