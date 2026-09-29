@@ -2,6 +2,7 @@ package bg.vetbook.ui;
 
 import bg.vetbook.config.AppConfig;
 import bg.vetbook.dao.Database;
+import bg.vetbook.dao.ReportDao;
 
 import java.awt.*;
 import javax.swing.*;
@@ -10,6 +11,7 @@ import javax.swing.*;
 // Прави го Стоян.
 public class ReportPanel extends ScreenPanel {
 
+    private ReportDao reportDao;
     private AppConfig config;
     private Database database;
     private JTextField fromDateField;
@@ -22,6 +24,7 @@ public class ReportPanel extends ScreenPanel {
     public ReportPanel(AppConfig config, Database database) {
         this.config = config;
         this.database = database;
+        this.reportDao= new ReportDao(database);
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
@@ -58,13 +61,57 @@ public class ReportPanel extends ScreenPanel {
 
         add(scrollPane, BorderLayout.CENTER);
 
-        // --- ДЕЙСТВИЯ НА БУТОНИТЕ (Засега само тестови) ---
         btnGenerate.addActionListener(e -> {
-            reportArea.setText("Зареждане на справката...\n\n");
-            reportArea.append("Тук ще излезе бройката по статуси.\n");
-            reportArea.append("Тук ще излезе приходът по лекари.\n");
+            String fromDate = fromDateField.getText().trim();
+            String toDate = toDateField.getText().trim();
 
-            btnExport.setEnabled(true); // Отключваме експорта
+            if (fromDate.isEmpty() || toDate.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Моля, въведете и двете дати!", "Внимание", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            reportArea.setText("Справка за период: " + fromDate + " до " + toDate + "\n");
+            reportArea.append("==================================================\n\n");
+
+            try {
+                // Тъй като в базата датите са с часове (напр. "2026-09-22 14:00"),
+                // добавяме " 00:00" и " 23:59", за да хванем целите дни.
+                String startQuery = fromDate + " 00:00";
+                String endQuery = toDate + " 23:59";
+
+                // --- 1. Брой прегледи по статус ---
+                java.util.Map<String, Integer> statusCount = reportDao.getVisitCountByStatus(startQuery, endQuery);
+                reportArea.append("=== БРОЙ ПРЕГЛЕДИ ПО СТАТУС ===\n");
+                if (statusCount.isEmpty()) {
+                    reportArea.append("Няма намерени прегледи за периода.\n");
+                } else {
+                    for (java.util.Map.Entry<String, Integer> entry : statusCount.entrySet()) {
+                        reportArea.append(String.format("%-20s : %d бр.\n", entry.getKey(), entry.getValue()));
+                    }
+                }
+                reportArea.append("\n");
+
+                // --- 2. Приход по лекари ---
+                java.util.Map<String, Double> incomeStats = reportDao.getIncomeByDoctor(startQuery, endQuery);
+                reportArea.append("=== ПРИХОД ПО ЛЕКУВАЩ ЛЕКАР ===\n");
+                if (incomeStats.isEmpty()) {
+                    reportArea.append("Няма отчетени приходи за периода.\n");
+                } else {
+                    double totalAll = 0;
+                    for (java.util.Map.Entry<String, Double> entry : incomeStats.entrySet()) {
+                        reportArea.append(String.format("%-20s : %.2f лв.\n", entry.getKey(), entry.getValue()));
+                        totalAll += entry.getValue();
+                    }
+                    reportArea.append("--------------------------------------------------\n");
+                    reportArea.append(String.format("%-20s : %.2f лв.\n", "ОБЩО ПРИХОДИ", totalAll));
+                }
+
+                btnExport.setEnabled(true); // Отключваме бутона за CSV файла
+
+            } catch (java.sql.SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Грешка при извличане на данните: " + ex.getMessage(), "Грешка", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
         });
 
         btnExport.addActionListener(e -> {
