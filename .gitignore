@@ -25,3 +25,6 @@ out/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# Помощен файл за демонстрацията, само локален.
+start-demo.bat
