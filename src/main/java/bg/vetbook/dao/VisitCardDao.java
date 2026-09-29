@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -115,6 +116,29 @@ public class VisitCardDao {
 
             stmt.executeUpdate();
         }
+    }
+
+    // Казва дали животното има валиден златен картон днес.
+    // Датите се пазят във вид ГГГГ-ММ-ДД, затова сравнението като текст работи.
+    public boolean hasValidGoldCard(int animalId) throws SQLException {
+        String sql = "SELECT gold_card_until FROM animals WHERE id = ?";
+
+        try (Connection conn = database.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, animalId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    String until = rs.getString("gold_card_until");
+                    if (until == null || until.isEmpty()) {
+                        return false;
+                    }
+                    return until.compareTo(LocalDate.now().toString()) >= 0;
+                }
+            }
+        }
+        return false;
     }
 
     // Заявката е една и съща за двата метода отгоре, затова стои на едно място.

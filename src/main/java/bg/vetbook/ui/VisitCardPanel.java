@@ -12,6 +12,7 @@ import bg.vetbook.model.ItemType;
 import bg.vetbook.model.Visit;
 import bg.vetbook.model.VisitItem;
 import bg.vetbook.model.VisitStatus;
+import bg.vetbook.service.VisitService;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -30,6 +31,13 @@ public class VisitCardPanel extends ScreenPanel {
     private VisitItemDao visitItemDao;
     private AnimalDao animalDao;
     private DoctorDao doctorDao;
+
+    // Правилата на амбулаторията.
+    private VisitService visitService;
+
+    // Вдига се, докато екранът се пълни, за да не се задействат
+    // слушателите на менютата от самото зареждане.
+    private boolean loading = false;
 
     // Прегледът, който се редактира в момента.
     private Visit visit = new Visit();
@@ -65,6 +73,7 @@ public class VisitCardPanel extends ScreenPanel {
         this.visitItemDao = new VisitItemDao(database);
         this.animalDao = new AnimalDao(database);
         this.doctorDao = new DoctorDao(database);
+        this.visitService = new VisitService(config, database);
 
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -101,6 +110,10 @@ public class VisitCardPanel extends ScreenPanel {
 
         animalCombo = new JComboBox<>();
         doctorCombo = new JComboBox<>();
+
+        // Смени ли се животното, таксата може да се промени -
+        // животно със златен картон не плаща консултация.
+        animalCombo.addActionListener(e -> refreshFee());
         dateField = new JTextField(10);
         timeField = new JTextField(6);
         complaintField = new JTextField(30);
@@ -210,13 +223,14 @@ public class VisitCardPanel extends ScreenPanel {
     // ---------- зареждане ----------
 
     private void loadVisit() {
+        loading = true;
         try {
             fillCombos();
 
             if (visitId <= 0) {
-                // Нов преглед: празен обект с таксата от настройките.
+                // Нов преглед: празен обект. Таксата се смята от правилата
+                // според избраното животно.
                 visit = new Visit();
-                visit.setConsultationFee(config.getConsultationFee());
                 items = new java.util.ArrayList<>();
                 titleLabel.setText("Нов преглед");
             } else {
@@ -234,11 +248,41 @@ public class VisitCardPanel extends ScreenPanel {
 
             showVisitInFields();
             showItemsInTable();
-            updateTotal();
             applyReadOnly();
+
+            loading = false;
+
+            // За нов преглед таксата зависи от избраното животно.
+            if (visit.isNew()) {
+                refreshFee();
+            } else {
+                updateTotal();
+            }
 
         } catch (SQLException e) {
             Dialogs.error(this, "Прегледът не можа да се зареди.", e);
+        } finally {
+            loading = false;
+        }
+    }
+
+    // Пита правилата каква е таксата за избраното животно и я показва.
+    // Прави се само за нов преглед - при записан се пази начислената тогава.
+    private void refreshFee() {
+        if (loading || visit == null || !visit.isNew()) {
+            return;
+        }
+
+        Animal animal = (Animal) animalCombo.getSelectedItem();
+        if (animal == null) {
+            return;
+        }
+
+        try {
+            visit.setConsultationFee(visitService.feeFor(animal.getId()));
+            updateTotal();
+        } catch (SQLException e) {
+            Dialogs.error(this, "Таксата не можа да се изчисли.", e);
         }
     }
 
@@ -351,6 +395,13 @@ public class VisitCardPanel extends ScreenPanel {
         readFieldsIntoVisit();
 
         try {
+            // Първо правилата. Ако има нарушено, нищо не се записва.
+            List<String> problems = visitService.findProblems(visit);
+            if (!problems.isEmpty()) {
+                showProblems(problems);
+                return;
+            }
+
             if (visit.isNew()) {
                 int newId = visitCardDao.insert(visit);
                 visitId = newId;
@@ -364,6 +415,15 @@ public class VisitCardPanel extends ScreenPanel {
         } catch (SQLException e) {
             Dialogs.error(this, "Прегледът не можа да се запише.", e);
         }
+    }
+
+    // Показва нарушените правила в едно съобщение, по едно на ред.
+    private void showProblems(List<String> problems) {
+        StringBuilder text = new StringBuilder("Прегледът не може да се запише:\n\n");
+        for (String problem : problems) {
+            text.append("•  ").append(problem).append('\n');
+        }
+        Dialogs.error(this, text.toString());
     }
 
     // ---------- процедури ----------
