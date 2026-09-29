@@ -115,7 +115,47 @@ public class ReportPanel extends ScreenPanel {
         });
 
         btnExport.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Функцията за CSV предстои да се напише!");
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Запазване на справката като CSV");
+
+            // Задаваме име по подразбиране
+            fileChooser.setSelectedFile(new java.io.File("spravka_" + fromDateField.getText() + ".csv"));
+
+            int userSelection = fileChooser.showSaveDialog(this);
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                java.io.File fileToSave = fileChooser.getSelectedFile();
+
+                // Проверяваме дали файлът завършва на .csv, ако не - добавяме го
+                if (!fileToSave.getName().toLowerCase().endsWith(".csv")) {
+                    fileToSave = new java.io.File(fileToSave.getAbsolutePath() + ".csv");
+                }
+
+                // Използваме PrintWriter и задаваме UTF-8 кодиране
+                try (java.io.PrintWriter writer = new java.io.PrintWriter(
+                        new java.io.OutputStreamWriter(new java.io.FileOutputStream(fileToSave), java.nio.charset.StandardCharsets.UTF_8))) {
+
+                    // ДОБАВКА: Записваме BOM (Byte Order Mark) символ.
+                    // Той казва на Excel, че файлът е UTF-8, за да не излиза кирилицата на "маймуници".
+                    writer.write('\ufeff');
+
+                    // Взимаме целия текст от екрана и го разделяме ред по ред
+                    String[] lines = reportArea.getText().split("\\n");
+                    for (String line : lines) {
+                        // Махаме излишните знаци "=" и "-"
+                        if (line.contains("==") || line.contains("--")) {
+                            continue;
+                        }
+                        // Заменяме разделителя " : " със запетая, за да стане на колони в CSV
+                        String csvLine = line.replace(" : ", ",");
+                        writer.println(csvLine);
+                    }
+
+                    JOptionPane.showMessageDialog(this, "Справката е запазена успешно!", "Успех", JOptionPane.INFORMATION_MESSAGE);
+                } catch (java.io.IOException ex) {
+                    JOptionPane.showMessageDialog(this, "Грешка при запазване на файла: " + ex.getMessage(), "Грешка", JOptionPane.ERROR_MESSAGE);
+                    ex.printStackTrace();
+                }
+            }
         });
     }
 
