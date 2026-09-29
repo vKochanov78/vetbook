@@ -41,7 +41,7 @@ public class OwnerDao {
         }
     }
     public void updateOwner(Owner owner) throws SQLException{
-        String sql = "UPDATE FROM owners SET full_name=?,phone=?, email=? WHERE id=?";
+        String sql = "UPDATE owners SET full_name=?,phone=?, email=? WHERE id=?";
         try(Connection conn = database.connect();
         PreparedStatement pstmt = conn.prepareStatement(sql)){
             pstmt.setString(1, owner.getName());
