@@ -46,7 +46,7 @@ public class CatalogPanel extends ScreenPanel {
         mainContainer.setOpaque(false);
 
         // Инициализираме празни модели за таблиците
-        ownerModel = new DefaultTableModel(new String[]{"ID", "Име", "Телефон"}, 0);
+        ownerModel = new DefaultTableModel(new String[]{"ID", "Име", "Телефон","Имейл"}, 0);
         animalModel = new DefaultTableModel(new String[]{"ID", "Име", "Вид", "Собственик"}, 0);
 
         // Създаваме и добавяме двете секции към екрана
@@ -70,7 +70,7 @@ public class CatalogPanel extends ScreenPanel {
             // Зареждане на собственици
             List<Owner> owners = ownerDao.getAllOwners();
             for (Owner o : owners) {
-                ownerModel.addRow(new Object[]{o.getId(), o.getName(), o.getPhone()});
+                ownerModel.addRow(new Object[]{o.getId(), o.getName(), o.getPhone(), o.getEmail()});
             }
             // Зареждане на животни
             List<Animal> animals = animalDao.getAllAnimals();
@@ -216,13 +216,22 @@ public class CatalogPanel extends ScreenPanel {
                 "Потвърждение за изтриване",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE);
-
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 ownerDao.deleteOwner(id);
                 loadData();
             } catch (SQLException ex) {
-                Dialogs.error(this, "Грешка при изтриване на собственик.", ex);
+                // Проверяваме дали грешката е заради свързани животни (Foreign Key)
+                if (ex.getMessage().contains("FOREIGN KEY constraint failed")) {
+                    JOptionPane.showMessageDialog(this,
+                            "Не можете да изтриете този собственик, защото към него има записани животни или прегледи!\n" +
+                                    "Моля, първо изтрийте неговите животни.",
+                            "Забранено изтриване",
+                            JOptionPane.ERROR_MESSAGE);
+                } else {
+                    // Ако е друга грешка, показваме стандартното съобщение
+                    Dialogs.error(this, "Грешка при изтриване на собственик.", ex);
+                }
             }
         }
     }
