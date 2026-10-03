@@ -65,9 +65,8 @@ public class ReportPanel extends ScreenPanel {
             String fromDate = fromDateField.getText().trim();
             String toDate = toDateField.getText().trim();
 
-            if (fromDate.isEmpty() || toDate.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Моля, въведете и двете дати!", "Внимание", JOptionPane.WARNING_MESSAGE);
-                return;
+            if (!fromDate.matches("\\d{4}-\\d{2}-\\d{2}") || !toDate.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                JOptionPane.showMessageDialog(this, "Форматът трябва да е ГГГГ-ММ-ДД!", "Грешка", 0); return;
             }
 
             reportArea.setText("Справка за период: " + fromDate + " до " + toDate + "\n");
